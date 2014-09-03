@@ -5,6 +5,8 @@ import ConfigParser
 import urllib2
 import json
 
+from utils import check_hash
+
 
 def load_config(config_file='config.ini'):
     config = ConfigParser.ConfigParser()
@@ -42,12 +44,39 @@ def remove_files(folder, file_list):
             exit('Could not remove a file "%s"; %s' % (afile_with_path, e))
 
 
+def download_file(folder, afile, remote_folder):
+    afile_with_path = '\\'.join((folder, afile))
+    afile_remote_path = '/'.join((remote_folder, afile))
+    try:
+        download_afile = urllib2.urlopen(afile_remote_path)
+    except Exception as e:
+        exit('Error downloading file "%s"; %s' % (afile_remote_path, e))
+    else:
+        with open(afile_with_path, 'wb') as output:
+            output.write(download_afile.read())
+
+
+def update(folder, files, remote_folder):
+    for afile, ahash in files.iteritems():
+        afile_with_path = '\\'.join((folder, afile))
+        if os.path.isfile(afile_with_path):
+            if check_hash(afile_with_path) == ahash.lower():
+                continue
+            else:
+                try:
+                    os.remove(afile_with_path)
+                except Exception as e:
+                    exit('Could not remove a file "%s"; %s' % (afile_with_path,
+                                                               e))
+        download_file(folder, afile, remote_folder)
+
+
 def main():
     options = load_config()
     files = get_file_list(options['update_serv'])
-    # Remove unused files
+    # Remove needless files
     remove_files(options['local_folder'], files.keys())
-
+    update(options['local_folder'], files, options['remote_folder'])
 
 if __name__ == '__main__':
     main()
