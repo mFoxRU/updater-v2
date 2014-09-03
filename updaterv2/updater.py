@@ -5,7 +5,14 @@ import ConfigParser
 import urllib2
 import json
 
-from utils import check_hash
+from utils import check_hash, logger
+
+logging = True
+
+
+def _log(*args):
+    if logging:
+        logger(*args)
 
 
 def load_config(config_file='config.ini'):
@@ -13,6 +20,7 @@ def load_config(config_file='config.ini'):
     try:
         config.readfp(open(config_file))
     except Exception as e:
+        _log('Error loading config file "%s"; %s' % (config_file, e))
         exit('Error loading config file "%s"; %s' % (config_file, e))
     else:
         options = dict(config.items('Main'))
@@ -23,9 +31,11 @@ def get_file_list(update_serv):
     try:
         resp = urllib2.urlopen(update_serv)
     except Exception as e:
-        raise e
+        _log('Error loading file list; %s' % e)
+        exit('Error loading file list; %s' % e)
     else:
         data = json.load(resp)
+        _log('File list loaded')
         return data
 
 
@@ -41,7 +51,10 @@ def remove_files(folder, file_list):
         try:
             os.remove(afile_with_path)
         except Exception as e:
+            _log('Could not remove a file "%s"; %s' % (afile_with_path, e))
             exit('Could not remove a file "%s"; %s' % (afile_with_path, e))
+        else:
+            _log('Needless file removed: %s' % afile)
 
 
 def download_file(folder, afile, remote_folder):
@@ -50,10 +63,12 @@ def download_file(folder, afile, remote_folder):
     try:
         download_afile = urllib2.urlopen(afile_remote_path)
     except Exception as e:
+        _log('Error downloading file "%s"; %s' % (afile_remote_path, e))
         exit('Error downloading file "%s"; %s' % (afile_remote_path, e))
     else:
         with open(afile_with_path, 'wb') as output:
             output.write(download_afile.read())
+        _log('Downloaded new file: %s' % afile)
 
 
 def update(folder, files, remote_folder):
@@ -66,17 +81,22 @@ def update(folder, files, remote_folder):
                 try:
                     os.remove(afile_with_path)
                 except Exception as e:
+                    _log('Could not remove a file "%s"; %s' % (afile_with_path,
+                                                               e))
                     exit('Could not remove a file "%s"; %s' % (afile_with_path,
                                                                e))
+                else:
+                    _log('Hash mismatch, removing file: %s' % afile)
         download_file(folder, afile, remote_folder)
 
 
 def main():
+    _log('Updater started')
     options = load_config()
     files = get_file_list(options['update_serv'])
-    # Remove needless files
     remove_files(options['local_folder'], files.keys())
     update(options['local_folder'], files, options['remote_folder'])
+    _log('Update finished')
 
 if __name__ == '__main__':
     main()
