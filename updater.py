@@ -4,15 +4,29 @@ import os
 import ConfigParser
 import urllib2
 import json
+import hashlib
+from time import strftime
 
-from utils import check_hash, logger
 
 logging = True
+log_file = 'log.log'
 
 
 def _log(*args):
     if logging:
-        logger(*args)
+        with open(log_file, 'a') as logfile:
+            logfile.write(''.join((strftime('[%Y.%m.%d|%H:%M:%S] '),
+                                  ' '.join(str(x) for x in args), '\n')))
+
+
+def check_hash(filename):
+    hasher = hashlib.md5()
+    with open(filename, 'rb') as afile:
+        buf = afile.read(65536)
+        while len(buf) > 0:
+            hasher.update(buf)
+            buf = afile.read(65536)
+    return hasher.hexdigest().lower()
 
 
 def load_config(config_file='config.ini'):
