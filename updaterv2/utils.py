@@ -16,7 +16,7 @@ def check_hash(filename):
     return hasher.hexdigest().lower()
 
 
-def _log(*args):
+def logger(*args):
     with open(log_file, 'a') as logfile:
         logfile.write(''.join((strftime('[%Y.%m.%d|%H:%M:%S] '),
                                ' '.join(str(x) for x in args), '\n')))
