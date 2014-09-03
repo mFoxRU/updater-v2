@@ -1,5 +1,6 @@
 __author__ = 'mFoxRU'
 
+import os
 import ConfigParser
 import urllib2
 import json
@@ -26,9 +27,26 @@ def get_file_list(update_serv):
         return data
 
 
+def remove_files(folder, file_list):
+    files = os.listdir(folder)
+    # Had lots of map and filter below, removed for readability
+    for afile in files:
+        afile_with_path = '\\'.join((folder, afile))
+        if not os.path.isfile(afile_with_path):
+            continue
+        if afile in file_list:
+            continue
+        try:
+            os.remove(afile_with_path)
+        except Exception as e:
+            exit('Could not remove a file "%s"; %s' % (afile_with_path, e))
+
+
 def main():
     options = load_config()
     files = get_file_list(options['update_serv'])
+    # Remove unused files
+    remove_files(options['local_folder'], files.keys())
 
 
 if __name__ == '__main__':
