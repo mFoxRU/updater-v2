@@ -13,7 +13,7 @@ def check_hash(filename):
         while len(buf) > 0:
             hasher.update(buf)
             buf = afile.read(65536)
-    return hasher.hexdigest()
+    return hasher.hexdigest().lower()
 
 
 def _log(*args):
